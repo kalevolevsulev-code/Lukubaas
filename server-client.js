@@ -145,11 +145,19 @@ async function saveSnapshotToServer(snapshot) {
   }, "Serverisse salvestamine");
 
   if (!response.ok) {
-    if (response.status === 409) {
-      throw new Error("Sama projektikood ja versioon on juba serveris olemas.");
-    }
     const payload = await safeJson(response, "Serverisse salvestamine");
-    throw new Error(payload?.error || "Serverisse salvestamine ebaõnnestus. Kontrolli serveri seadistust ja proovi uuesti.");
+
+    if (response.status === 409) {
+      throw new Error(
+        payload?.error ||
+        "Serverisse salvestamine ebaõnnestus: projektiversioon on vastuolus serveris oleva versiooniajalooga."
+      );
+    }
+
+    throw new Error(
+      payload?.error ||
+      "Serverisse salvestamine ebaõnnestus. Kontrolli serveri seadistust ja proovi uuesti."
+    );
   }
 
   return safeJson(response, "Serverisse salvestamine");
