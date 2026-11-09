@@ -16,6 +16,15 @@ export default async (request) => {
     return jsonResponse(405, { error: "Meetod pole lubatud." });
   } catch (error) {
     console.error("projects function error", error);
+
+    if (error?.message === "SUPABASE_URL missing") {
+      return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_URL puudub Deploy Preview keskkonnast." });
+    }
+
+    if (error?.message === "SUPABASE_SECRET_KEY missing") {
+      return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_SECRET_KEY puudub Deploy Preview keskkonnast." });
+    }
+
     return jsonResponse(500, { error: "Serveri sisemine viga." });
   }
 };
@@ -182,8 +191,12 @@ async function supabaseFetch(path, options = {}) {
   const baseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SECRET_KEY;
 
-  if (!baseUrl || !serviceKey) {
-    throw new Error("Supabase keskkonnamuutujad puuduvad.");
+  if (!baseUrl) {
+    throw new Error("SUPABASE_URL missing");
+  }
+
+  if (!serviceKey) {
+    throw new Error("SUPABASE_SECRET_KEY missing");
   }
 
   const headers = new Headers(options.headers || {});
