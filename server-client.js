@@ -75,8 +75,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.body.classList.add("server-preview-print");
+
+    const cleanupPrintMode = () => {
+      document.body.classList.remove("server-preview-print");
+      window.removeEventListener("afterprint", cleanupPrintMode);
+    };
+
+    window.addEventListener("afterprint", cleanupPrintMode);
     window.print();
-    document.body.classList.remove("server-preview-print");
   });
 });
 
