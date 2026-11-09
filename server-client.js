@@ -215,84 +215,198 @@ function validateOpenedProject(project) {
 function renderProjectPreview(project) {
   const snapshot = project.snapshot;
   const target = document.getElementById("projectPreviewContent");
-  const doors = new Map((snapshot.matrix?.doors || []).map(door => [door.id, door.name]));
 
-  const keyRows = snapshot.generated.keys.map(key => `
-    <tr>
-      <td>${escapeHtml(key.name)}</td>
-      <td>${formatQuantity(key.quantity)}</td>
-      <td class="code">${escapeHtml(Array.isArray(key.code) ? key.code.join("") : "")}</td>
-      <td>${key.hierarchyLevel ?? ""}</td>
-    </tr>
-  `).join("");
+  const matrixKeys = Array.isArray(snapshot.matrix?.keys) ? snapshot.matrix.keys : [];
+  const matrixDoors = Array.isArray(snapshot.matrix?.doors) ? snapshot.matrix.doors : [];
+  const generatedKeys = Array.isArray(snapshot.generated?.keys) ? snapshot.generated.keys : [];
+  const cylinders = Array.isArray(snapshot.generated?.cylinders) ? snapshot.generated.cylinders : [];
 
-  const keyNamesById = new Map(
-    snapshot.generated.keys.map(key => [key.id, key.name])
+  const keyById = new Map(matrixKeys.map(key => [key.id, key]));
+  const generatedKeyById = new Map(generatedKeys.map(key => [key.id, key]));
+  const doorById = new Map(matrixDoors.map(door => [door.id, door]));
+
+  let html = "";
+
+  // 1. Projekt — sama info nagu generaatori projektiplokis
+  html += `<div class="card">
+    <h2>1. Projekt</h2>
+    <div class="status">
+      <strong>Projekt:</strong> ${escapeHtml(snapshot.project?.projectCode || "-")}<br>
+      <strong>Tellimus:</strong> ${snapshot.project?.orderNumber ? escapeHtml(snapshot.project.orderNumber) : "-"}
+    </div>
+  </div>`;
+
+  // Kontroll — snapshotis talletatud kinnitatud kontrollitulemus
+  html += `<div class="card">
+    <h2>Kontroll</h2>`;
+
+  const validation = snapshot.validation || { valid: false, errors: [], warnings: [] };
+  const errors = Array.isArray(validation.errors) ? validation.errors : [];
+  const warnings = Array.isArray(validation.warnings) ? validation.warnings : [];
+
+  if (errors.length === 0) {
+    html += `<div class="status">Kontroll OK. Tõsiseid vigu ei leitud.</div>`;
+  } else {
+    html += `<div class="error">Leiti vead:</div>`;
+    errors.forEach(error => {
+      html += `<div class="error">${escapeHtml(error)}</div>`;
+    });
+  }
+
+  if (warnings.length > 0) {
+    html += `<div class="warning">Hoiatused (${warnings.length}):</div>`;
+    warnings.forEach(warning => {
+      html += `<div class="warning">${escapeHtml(warning)}</div>`;
+    });
+  }
+
+  html += `</div>`;
+
+  // Võtmete tugevus / hierarhia — sama tabel ja terminid nagu generaatoris
+  html += `<div class="card">
+    <h2>Võtmete tugevus / hierarhia</h2>
+    <div class="status">Võtmed järjestatud avamisõiguste tugevuse järgi.</div>
+    <table>
+      <thead>
+        <tr><th>Jrk</th><th>Võti</th><th>Kogus</th><th>Tehniline tase</th><th>Avab uksi</th><th>Avatavad uksed</th></tr>
+      </thead>
+      <tbody>`;
+
+  const hierarchyKeys = [...generatedKeys].sort((a, b) => {
+    const levelA = Number.isInteger(a.hierarchyLevel) ? a.hierarchyLevel : 999;
+    const levelB = Number.isInteger(b.hierarchyLevel) ? b.hierarchyLevel : 999;
+    if (levelA !== levelB) return levelA - levelB;
+    return generatedKeys.indexOf(a) - generatedKeys.indexOf(b);
+  });
+
+  hierarchyKeys.forEach((key, index) => {
+    const rowClass = key.hierarchyLevel === 1 ? "level-1" : key.hierarchyLevel === 2 ? "level-2" : "";
+    const openedDoorNames = (Array.isArray(key.opensDoors) ? key.opensDoors : [])
+      .map(doorId => doorById.get(doorId)?.name || doorId);
+
+    html += `<tr class="${rowClass}">
+      <td>${index + 1}</td>
+      <td>${escapeHtml(key.name || "")}</td>
+      <td>${formatQuantity(key.quantity)} tk</td>
+      <td>Tase ${key.hierarchyLevel ?? ""}</td>
+      <td>${openedDoorNames.length}</td>
+      <td>${openedDoorNames.map(escapeHtml).join(", ")}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+
+  // Avamismaatriks — sama ülesehitus nagu generaatoris
+  const totalKeys = matrixKeys.reduce(
+    (sum, key) => sum + (Number.isInteger(key.quantity) ? key.quantity : 0),
+    0
   );
+  const totalCylinders = matrixDoors.reduce(
+    (sum, door) => sum + (Number.isInteger(door.quantity) ? door.quantity : 0),
+    0
+  );
+
+  html += `<div class="card">
+    <h2>Avamismaatriks</h2>
+    <div class="status">Leitud võtmetüüpe: ${matrixKeys.length} (${totalKeys} võtit), südamikuridu: ${matrixDoors.length} (${totalCylinders} südamikku)</div>
+    <table>
+      <thead><tr><th>Uks \\ Võti</th><th>Südamikke</th>`;
+
+  matrixKeys.forEach(key => {
+    html += `<th>${escapeHtml(key.name || "")}<br><small>${formatQuantity(key.quantity)} tk</small></th>`;
+  });
+
+  html += `</tr></thead><tbody>`;
+
+  matrixDoors.forEach(door => {
+    const openBy = new Set(Array.isArray(door.openBy) ? door.openBy : []);
+    const cylinderQtyText = door.lockable
+      ? `${formatQuantity(door.quantity)} tk`
+      : "ei lukustata";
+
+    html += `<tr><td>${escapeHtml(door.name || "")}</td><td>${cylinderQtyText}</td>`;
+    matrixKeys.forEach(key => {
+      html += openBy.has(key.id) ? `<td class="open-cell">X</td>` : `<td></td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+
+  // Võtmekoodid — sama tabel nagu generaatoris
+  const totalGeneratedKeys = generatedKeys.reduce(
+    (sum, key) => sum + (Number.isInteger(key.quantity) ? key.quantity : 0),
+    0
+  );
+
+  html += `<div class="card">
+    <h2>Võtmekoodid</h2>
+    <div class="status">Võtmekoodid genereeritud: ${generatedKeys.length} tüüpi / ${totalGeneratedKeys} võtit</div>
+    <table>
+      <thead><tr><th>Võti</th><th>Kogus</th><th>Kood</th></tr></thead>
+      <tbody>`;
+
+  generatedKeys.forEach(key => {
+    html += `<tr>
+      <td>${escapeHtml(key.name || "")}</td>
+      <td>${formatQuantity(key.quantity)} tk</td>
+      <td class="code">${escapeHtml(Array.isArray(key.code) ? key.code.join("") : "")}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+
+  // Südamike koodid — sama kaart/tabel nagu generaatoris
+  html += `<div class="card">
+    <h2>Südamike koodid</h2>
+    <div class="status">Projekt: ${escapeHtml(snapshot.project?.projectCode || "-")}<br>Südamike koodid genereeritud: ${cylinders.length}. Ristiavamise kontroll: OK.</div>`;
 
   const maxMasterPins = Number.isInteger(snapshot.settings?.maxMasterPinsPerChamber)
     ? snapshot.settings.maxMasterPinsPerChamber
     : 2;
 
-  const cylinderCards = snapshot.generated.cylinders.map((cylinder, index) => {
-    const doorName = doors.get(cylinder.doorId) || cylinder.doorId || "";
+  cylinders.forEach((cylinder, index) => {
+    const door = doorById.get(cylinder.doorId);
+    const doorName = door?.name || cylinder.doorId || "";
+    const qty = door ? formatQuantity(door.quantity) : formatQuantity(cylinder.quantity);
     const channels = Array.isArray(cylinder.pinning) ? cylinder.pinning : [];
+    const openedByNames = (Array.isArray(cylinder.openedBy) ? cylinder.openedBy : [])
+      .map(keyId => generatedKeyById.get(keyId)?.name || keyById.get(keyId)?.name || keyId);
 
-    let pinTable = `<table><tbody><tr><th>Tava</th>`;
+    html += `<div class="pinning-card">
+      <div class="pinning-title">#${index + 1} ${escapeHtml(doorName)} — ${qty} tk</div>
+      <table><tbody>
+        <tr><th>Tava</th>`;
+
     channels.forEach(channel => {
-      pinTable += `<td>${escapeHtml(String(channel.base ?? ""))}</td>`;
+      html += `<td>${escapeHtml(String(channel.base ?? ""))}</td>`;
     });
-    pinTable += `</tr>`;
+
+    html += `</tr>`;
 
     for (let level = 0; level < maxMasterPins; level++) {
-      pinTable += `<tr><th>s${level + 1}</th>`;
+      html += `<tr><th>s${level + 1}</th>`;
       channels.forEach(channel => {
         const value = Array.isArray(channel.masters) ? channel.masters[level] : undefined;
-        pinTable += `<td>${value !== undefined ? escapeHtml(String(value)) : ""}</td>`;
+        html += `<td>${value !== undefined ? escapeHtml(String(value)) : ""}</td>`;
       });
-      pinTable += `</tr>`;
+      html += `</tr>`;
     }
 
-    pinTable += `</tbody></table>`;
+    html += `</tbody></table>
+      <div><strong>Avab:</strong> ${openedByNames.map(escapeHtml).join(", ")}</div>
+    </div>`;
+  });
 
-    const openedByNames = Array.isArray(cylinder.openedBy)
-      ? cylinder.openedBy
-          .map(keyId => keyNamesById.get(keyId) || keyId)
-          .map(escapeHtml)
-          .join(", ")
-      : "";
+  html += `</div>`;
 
-    return `
-      <div class="pinning-card">
-        <div class="pinning-title">#${index + 1} ${escapeHtml(doorName)} — ${formatQuantity(cylinder.quantity)} tk</div>
-        ${pinTable}
-        <div><strong>Avab:</strong> ${openedByNames}</div>
-      </div>
-    `;
-  }).join("");
+  // Projekti staatus — sama termin nagu generaatoris
+  html += `<div class="card">
+    <h2>Projekti staatus</h2>
+    <div class="status">Staatus: <strong>KINNITATUD</strong></div>
+  </div>`;
 
-  target.innerHTML = `
-    <div class="preview-meta">
-      <div><strong>Projekt:</strong> ${escapeHtml(snapshot.project.projectCode)} / V${snapshot.project.projectVersion}</div>
-      <div><strong>Tellimuse nr:</strong> ${escapeHtml(snapshot.project.orderNumber || "—")}</div>
-      <div><strong>Profiil:</strong> ${escapeHtml(snapshot.profile?.id || "")}</div>
-      <div><strong>Engine:</strong> ${escapeHtml(snapshot.engineVersion || "")}</div>
-      <div><strong>Kinnitatud:</strong> ${escapeHtml(formatDateTime(snapshot.project.confirmedAt))}</div>
-      <div><strong>SHA-256:</strong> <span class="code checksum">${escapeHtml(snapshot.integrity?.checksum || "")}</span></div>
-    </div>
-
-    <h4>Võtmed (${snapshot.generated.keys.length})</h4>
-    <table>
-      <thead>
-        <tr><th>Võti</th><th>Kogus</th><th>Kood</th><th>Hierarhia</th></tr>
-      </thead>
-      <tbody>${keyRows}</tbody>
-    </table>
-
-    <h4>Südamike koodid</h4>
-    <div class="status">Projekt: ${escapeHtml(snapshot.project.projectCode || "-")}<br>Südamike koodid genereeritud: ${snapshot.generated.cylinders.length}. Ristiavamise kontroll: OK.</div>
-    ${cylinderCards}
-  `;
+  target.innerHTML = html;
 }
 
 async function serverFetch(url, options, operationName) {
