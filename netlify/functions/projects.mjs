@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store"
@@ -34,6 +36,18 @@ async function handlePost(request) {
   const snapshot = body?.snapshot;
   const validationError = validateSnapshot(snapshot);
   if (validationError) return jsonResponse(400, { error: validationError });
+
+  const actualBytes = Buffer.byteLength(JSON.stringify(snapshot), "utf8");
+  if (actualBytes > MAX_BODY_BYTES) {
+    return jsonResponse(413, { error: "Snapshot on liiga suur." });
+  }
+
+  const checksumSource = deepClone(snapshot);
+  checksumSource.integrity.checksum = "";
+  const expectedChecksum = sha256Hex(canonicalJson(checksumSource));
+  if (expectedChecksum !== snapshot.integrity.checksum) {
+    return jsonResponse(400, { error: "Snapshoti checksum ei vasta sisule." });
+  }
 
   const row = {
     project_code: snapshot.project.projectCode,
@@ -187,4 +201,28 @@ function jsonResponse(status, body) {
     status,
     headers: JSON_HEADERS
   });
+}
+
+
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function canonicalJson(value) {
+  return JSON.stringify(sortObjectKeys(value));
+}
+
+function sortObjectKeys(value) {
+  if (Array.isArray(value)) return value.map(sortObjectKeys);
+  if (value && typeof value === "object") {
+    return Object.keys(value).sort().reduce((result, key) => {
+      result[key] = sortObjectKeys(value[key]);
+      return result;
+    }, {});
+  }
+  return value;
+}
+
+function sha256Hex(text) {
+  return createHash("sha256").update(text, "utf8").digest("hex");
 }
