@@ -18,11 +18,11 @@ export default async (request) => {
     console.error("projects function error", error);
 
     if (error?.message === "SUPABASE_URL missing") {
-      return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_URL puudub Deploy Preview keskkonnast." });
+      return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_URL puudub Netlify keskkonnast." });
     }
 
     if (error?.message === "SUPABASE_SECRET_KEY missing") {
-      return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_SECRET_KEY puudub Deploy Preview keskkonnast." });
+      return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_SECRET_KEY puudub Netlify keskkonnast." });
     }
 
     return jsonResponse(500, { error: "Serveri sisemine viga." });
@@ -123,6 +123,58 @@ async function handlePost(request) {
 
 async function handleGet(request) {
   const url = new URL(request.url);
+  const projectId = url.searchParams.get("id");
+
+  if (projectId) {
+    if (!/^[0-9a-f-]{36}$/i.test(projectId)) {
+      return jsonResponse(400, { error: "Projekti ID kuju on vigane. Värskenda nimekirja ja proovi uuesti." });
+    }
+
+    const response = await supabaseFetch(
+      `/rest/v1/projects?id=eq.${encodeURIComponent(projectId)}&select=id,project_code,project_version,profile,status,engine_version,confirmed_at,checksum,created_at,snapshot&limit=1`,
+      { method: "GET" }
+    );
+
+    const text = await response.text();
+    if (!response.ok) {
+      console.error("Supabase project open failed", response.status, text);
+      return jsonResponse(502, {
+        error: "Projekti avamine ebaõnnestus: server ei saanud Supabase'ist projekti andmeid kätte. Proovi nimekirja värskendada."
+      });
+    }
+
+    let rows;
+    try {
+      rows = JSON.parse(text);
+    } catch {
+      return jsonResponse(502, {
+        error: "Projekti avamine ebaõnnestus: Supabase'i vastus ei olnud loetav."
+      });
+    }
+
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) {
+      return jsonResponse(404, {
+        error: "Projekti ei leitud serverist. See võib olla eemaldatud või nimekiri on aegunud."
+      });
+    }
+
+    return jsonResponse(200, {
+      project: {
+        id: row.id,
+        projectCode: row.project_code,
+        projectVersion: row.project_version,
+        profile: row.profile,
+        status: row.status,
+        engineVersion: row.engine_version,
+        confirmedAt: row.confirmed_at,
+        checksum: row.checksum,
+        createdAt: row.created_at,
+        snapshot: row.snapshot
+      }
+    });
+  }
+
   const rawLimit = Number(url.searchParams.get("limit") || "100");
   const limit = Number.isInteger(rawLimit)
     ? Math.min(Math.max(rawLimit, 1), MAX_LIST_LIMIT)
@@ -136,7 +188,9 @@ async function handleGet(request) {
   const text = await response.text();
   if (!response.ok) {
     console.error("Supabase list failed", response.status, text);
-    return jsonResponse(502, { error: "Projektide nimekirja laadimine ebaõnnestus." });
+    return jsonResponse(502, {
+      error: "Projektide nimekirja laadimine ebaõnnestus: server ei saanud Supabase'ist projektide loendit kätte."
+    });
   }
 
   let rows;
