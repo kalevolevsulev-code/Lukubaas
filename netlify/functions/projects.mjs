@@ -231,7 +231,7 @@ async function handleGet(request) {
     : MAX_LIST_LIMIT;
 
   const response = await supabaseFetch(
-    `/rest/v1/projects?select=id,project_code,project_version,profile,status,engine_version,confirmed_at,checksum,created_at&order=created_at.desc&limit=${limit}`,
+    `/rest/v1/projects?select=id,project_code,project_version,profile,status,engine_version,confirmed_at,checksum,created_at,order_number:snapshot->project->>orderNumber&order=created_at.desc&limit=${limit}`,
     { method: "GET" }
   );
 
@@ -254,6 +254,7 @@ async function handleGet(request) {
     projects: rows.map(row => ({
       id: row.id,
       projectCode: row.project_code,
+      orderNumber: row.order_number || "",
       projectVersion: row.project_version,
       profile: row.profile,
       status: row.status,

@@ -242,6 +242,8 @@ function renderProjectList(projects) {
     return '<div class="project-group">' +
       '<div class="project-group-main">' +
         '<div><strong>' + escapeHtml(group.projectCode) + '</strong>' +
+        '<div class="project-order-number"><b>Tellimus:</b> ' +
+          escapeHtml(group.latest.orderNumber || "Määramata") + '</div>' +
         '<div class="project-group-meta">' +
           escapeHtml(group.latest.profile || "") +
           ' • viimane versioon V' + group.latest.projectVersion +
