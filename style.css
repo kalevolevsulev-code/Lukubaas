@@ -215,3 +215,38 @@ th {
     page-break-inside: avoid;
   }
 }
+
+
+/* ===== V1.1 Alpha 3: server project list / read-only preview ===== */
+#projectsList button,
+#serverProjectsCard button {
+  margin-left: 0;
+}
+
+.project-preview {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px solid #e5e5e5;
+}
+
+.preview-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin: 10px 0 16px 0;
+}
+
+.checksum {
+  word-break: break-all;
+  letter-spacing: 0;
+}
+
+#projectPreviewContent h4 {
+  margin: 18px 0 6px 0;
+}
+
+@media (max-width: 700px) {
+  .preview-meta {
+    grid-template-columns: 1fr;
+  }
+}
