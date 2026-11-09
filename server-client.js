@@ -220,6 +220,10 @@ async function openServerProject(projectId) {
 
     validateOpenedProject(payload.project);
     renderProjectPreview(payload.project);
+    window.currentServerProject = payload.project;
+    window.dispatchEvent(new CustomEvent("server-project-opened", {
+      detail: { project: payload.project }
+    }));
 
     status.className = "status";
     status.textContent =
