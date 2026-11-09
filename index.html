@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABUS SFA 777 Sarjastamise Generaator V1.0.4 Security Fix Stable</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>ABUS SFA 777 Sarjastamise Generaator V1.0.4</h1>
+    <div id="appHealth" class="status no-print">Kontrollin Exceli mootorit...</div>
+
+    <div class="card">
+      <h2>1. Projekt</h2>
+
+      <div class="form-row">
+        <label for="projectCode">Projektikood *</label>
+        <input type="text" id="projectCode" placeholder="LE-EST-260930-001" />
+        <button id="generateProjectCodeBtn" type="button">Genereeri projektikood</button>
+      </div>
+
+      <div class="form-row">
+        <label for="orderNumber">Tellimuse nr</label>
+        <input type="text" id="orderNumber" placeholder="T123456" />
+      </div>
+
+      <div id="projectInfo" class="status">Projekt puudub</div>
+    </div>
+
+    <div class="card no-print">
+      <h2>2. Exceli üleslaadimine</h2>
+      <input type="file" id="excelFile" accept=".xlsx,.xls" />
+      <button id="loadBtn" type="button">Loe Excel</button>
+      <button id="generateSystemBtn" type="button">Genereeri süsteem</button>
+    </div>
+
+    <div class="card no-print">
+      <h2>3. Seaded</h2>
+
+      <label>
+        Lubatud tavamuugid:
+        <input id="standardPinsInput" value="0,1,2,3,4,5,6,7,8,9" />
+      </label>
+
+      <br><br>
+
+      <label>
+        Lubatud sarjamuugid:
+        <input id="masterPinsInput" value="2,3,4,5,6,7,8" />
+      </label>
+    </div>
+
+    <div class="card no-print">
+      <h2>Kontroll</h2>
+      <div id="validationBox">Pole veel kontrollitud...</div>
+    </div>
+
+    <div class="card">
+      <h2>Võtmete tugevus / hierarhia</h2>
+      <div id="hierarchyBox">Pole veel arvutatud...</div>
+    </div>
+
+    <div class="card">
+      <h2>Avamismaatriks</h2>
+      <div id="matrixTable">Pole veel loetud...</div>
+    </div>
+
+    <div class="card">
+      <h2>Võtmekoodid</h2>
+      <div id="keyCodesBox">Pole veel genereeritud...</div>
+    </div>
+
+    <div class="card">
+      <h2>Südamike koodid</h2>
+      <div id="pinningBox">Pole veel genereeritud...</div>
+    </div>
+
+    <div class="card">
+      <h2>Projekti staatus</h2>
+      <div class="no-print">
+        <button id="confirmProjectBtn" type="button">Kinnita koodid</button>
+        <button id="printProjectBtn" type="button" disabled>Trüki projekt</button>
+      </div>
+      <div id="projectStatus" class="status">Staatus: TÖÖS</div>
+    </div>
+  </div>
+</body>
+</html>

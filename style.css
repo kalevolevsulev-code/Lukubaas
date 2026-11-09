@@ -1,0 +1,217 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 20px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+h1 {
+  color: #00a3e0;
+}
+
+button {
+  padding: 10px 15px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+input {
+  padding: 8px;
+  width: 260px;
+}
+
+#projectCode,
+#orderNumber {
+  width: 320px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  min-width: 110px;
+  font-weight: bold;
+}
+
+.status {
+  padding: 10px;
+  background: #eef9ee;
+  border: 1px solid #b8dfb8;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.warning {
+  padding: 10px;
+  background: #fff4e5;
+  border: 1px solid #ffcc80;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  color: #8a4b00;
+  font-weight: bold;
+}
+
+.error {
+  padding: 10px;
+  background: #ffecec;
+  border: 1px solid #ff9999;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  color: #b00000;
+  font-weight: bold;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+  font-weight: bold;
+}
+
+th {
+  background: #eaf7fc;
+}
+
+.open-cell {
+  color: #00a3e0;
+  font-weight: bold;
+}
+
+.code {
+  font-family: Consolas, monospace;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.pinning-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: #fafafa;
+}
+
+.pinning-title {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.level-1 {
+  background: #e8f7ff;
+  font-weight: bold;
+}
+
+.level-2 {
+  background: #f2fbff;
+}
+
+@media (max-width: 700px) {
+  body { margin: 10px; }
+  input, #projectCode, #orderNumber { width: 100%; box-sizing: border-box; }
+  button { margin: 6px 0 0 0; }
+  .card { overflow-x: auto; }
+}
+
+
+/* ===== PRINT ===== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    background: white;
+    margin: 0;
+    font-size: 11pt;
+  }
+
+  .container {
+    max-width: none;
+    width: 100%;
+  }
+
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+    margin: 0 0 12px 0;
+    break-inside: auto;
+  }
+
+  h1 {
+    font-size: 18pt;
+    margin: 0 0 10px 0;
+  }
+
+  h2 {
+    font-size: 13pt;
+    margin: 12px 0 6px 0;
+  }
+
+  .status {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 4px 0 8px 0;
+  }
+
+  table {
+    font-size: 8.5pt;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .pinning-card {
+    background: white;
+    border: 1px solid #999;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
