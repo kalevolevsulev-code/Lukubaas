@@ -58,6 +58,56 @@ async function handlePost(request) {
     return jsonResponse(400, { error: "Snapshoti checksum ei vasta sisule." });
   }
 
+
+  const versionCheckResponse = await supabaseFetch(
+    `/rest/v1/projects?project_code=eq.${encodeURIComponent(snapshot.project.projectCode)}&select=project_version&order=project_version.desc&limit=1`,
+    { method: "GET" }
+  );
+
+  const versionCheckText = await versionCheckResponse.text();
+  if (!versionCheckResponse.ok) {
+    console.error("Supabase version check failed", versionCheckResponse.status, versionCheckText);
+    return jsonResponse(502, {
+      error: "Projektiversiooni kontroll ebaõnnestus: server ei saanud viimast versiooni andmebaasist kontrollida."
+    });
+  }
+
+  let versionRows;
+  try {
+    versionRows = JSON.parse(versionCheckText);
+  } catch {
+    return jsonResponse(502, {
+      error: "Projektiversiooni kontroll ebaõnnestus: andmebaasi vastus ei olnud loetav."
+    });
+  }
+
+  const latestVersion = Array.isArray(versionRows) && versionRows[0]
+    ? Number(versionRows[0].project_version)
+    : 0;
+  const incomingVersion = snapshot.project.projectVersion;
+
+  if (latestVersion === 0 && incomingVersion !== 1) {
+    return jsonResponse(409, {
+      error: "Projektiversiooni salvestamine ebaõnnestus: uut projekti saab alustada ainult versioonist V1."
+    });
+  }
+
+  if (latestVersion > 0 && incomingVersion !== latestVersion + 1) {
+    return jsonResponse(409, {
+      error:
+        `Projektiversiooni salvestamine ebaõnnestus: projekti ${snapshot.project.projectCode} viimane versioon on V${latestVersion}. ` +
+        `Uus versioon peab olema V${latestVersion + 1}. Vanemat versiooni muuta ega sellest uut haru luua ei saa.`
+    });
+  }
+
+  if (snapshot.rekey && Number(snapshot.rekey.sourceProjectVersion) !== latestVersion) {
+    return jsonResponse(409, {
+      error:
+        `Rekey salvestamine ebaõnnestus: Rekey lähteversioon on V${snapshot.rekey.sourceProjectVersion}, ` +
+        `aga projekti viimane versioon on V${latestVersion}. Ava V${latestVersion} ja tee muudatus selle pealt.`
+    });
+  }
+
   const row = {
     project_code: snapshot.project.projectCode,
     project_version: snapshot.project.projectVersion,
