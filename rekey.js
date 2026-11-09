@@ -8,12 +8,24 @@ window.addEventListener("DOMContentLoaded", () => {
   const calculateBtn = document.getElementById("calculateRekeyBtn");
   const saveBtn = document.getElementById("saveRekeyBtn");
 
+  const pinSettings = document.getElementById("rekeyPinSettings");
+  const invalidateResult = () => {
+    rekeyCandidateSnapshot = null;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Salvesta uus versioon serverisse";
+    document.getElementById("rekeyResult").innerHTML = "";
+    renderRekeyStatus("Valik muutus. Arvuta Rekey uuesti.");
+  };
+  pinSettings.addEventListener("input", invalidateResult);
+  select.addEventListener("change", invalidateResult);
+
   calculateBtn.addEventListener("click", async () => {
     if (!rekeySourceProject?.snapshot) {
       renderRekeyError("Rekey arvutamine ebaõnnestus: ava enne serverist projekt.");
       return;
     }
 
+    const calculationSource = rekeySourceProject;
     const keyId = select.value;
     if (!keyId) {
       renderRekeyError("Rekey arvutamine ebaõnnestus: vali kadunud võti.");
@@ -21,21 +33,34 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     calculateBtn.disabled = true;
+    pinSettings.disabled = true;
+    select.disabled = true;
     saveBtn.disabled = true;
     rekeyCandidateSnapshot = null;
     renderRekeyStatus("Arvutan minimaalset ohutut Rekey lahendust...");
     document.getElementById("rekeyResult").innerHTML = "";
 
     try {
-      const result = await calculateRekey(rekeySourceProject.snapshot, keyId);
+      const pinOverrides = {
+        allowedStandardPins: parseRekeyPins("rekeyStandardPinsInput", 0, 9),
+        allowedMasterPins: parseRekeyPins("rekeyMasterPinsInput", 2, 8)
+      };
+      const result = await calculateRekey(calculationSource.snapshot, keyId, pinOverrides);
+      if (rekeySourceProject !== calculationSource) return;
       rekeyCandidateSnapshot = result.snapshot;
       renderRekeyResult(result);
       saveBtn.textContent = `Salvesta V${result.snapshot.project.projectVersion} serverisse`;
       saveBtn.disabled = false;
     } catch (error) {
-      renderRekeyError(error.message || "Rekey arvutamine ebaõnnestus.");
+      if (rekeySourceProject === calculationSource) {
+        renderRekeyError(error.message || "Rekey arvutamine ebaõnnestus.");
+      }
     } finally {
-      calculateBtn.disabled = false;
+      if (rekeySourceProject === calculationSource) {
+        calculateBtn.disabled = false;
+        pinSettings.disabled = false;
+        select.disabled = false;
+      }
     }
   });
 
@@ -45,23 +70,34 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const savingSource = rekeySourceProject;
+    const savingSnapshot = rekeyCandidateSnapshot;
     saveBtn.disabled = true;
+    calculateBtn.disabled = true;
+    pinSettings.disabled = true;
+    select.disabled = true;
     renderRekeyStatus(
       `Salvestan ${rekeyCandidateSnapshot.project.projectCode} / V${rekeyCandidateSnapshot.project.projectVersion} serverisse...`
     );
 
     try {
-      const result = await saveSnapshotToServer(rekeyCandidateSnapshot);
-      validateSaveResponse(result, rekeyCandidateSnapshot);
+      const result = await saveSnapshotToServer(savingSnapshot);
+      validateSaveResponse(result, savingSnapshot);
+      if (rekeySourceProject !== savingSource) return;
       renderRekeyStatus(
         `Rekey salvestatud • ID: ${escapeHtml(result.id)} • ${escapeHtml(result.projectCode)} / V${result.projectVersion}`
       );
       await loadProjectList();
     } catch (error) {
+      if (rekeySourceProject !== savingSource) return;
       renderRekeyError(
         error.message || "Rekey salvestamine ebaõnnestus: uut projektiversiooni ei salvestatud."
       );
       saveBtn.disabled = false;
+    } finally {
+      calculateBtn.disabled = false;
+      pinSettings.disabled = false;
+      select.disabled = false;
     }
   });
 });
@@ -80,6 +116,13 @@ window.addEventListener("server-project-opened", event => {
   const select = document.getElementById("rekeyKeySelect");
   const calculateBtn = document.getElementById("calculateRekeyBtn");
   const saveBtn = document.getElementById("saveRekeyBtn");
+
+  const settings = project.snapshot.settings || {};
+  document.getElementById("rekeyStandardPinsInput").value =
+    (settings.allowedStandardPins || [0,1,2,3,4,5,6,7,8,9]).join(",");
+  document.getElementById("rekeyMasterPinsInput").value =
+    (settings.allowedMasterPins || [2,3,4,5,6,7,8]).join(",");
+  document.getElementById("rekeyPinSettings").disabled = !isLatestVersion;
 
   panel.hidden = false;
   saveBtn.disabled = true;
@@ -126,8 +169,35 @@ window.addEventListener("server-project-opened", event => {
   renderRekeyStatus("Vali kadunud võti ja vajuta „Arvuta Rekey“.");
 });
 
-async function calculateRekey(sourceSnapshot, lostKeyId) {
+function parseRekeyPins(inputId, min, max) {
+  const raw = document.getElementById(inputId).value.trim();
+  const tokens = raw.split(",").map(value => value.trim());
+  if (!raw || tokens.some(value => !/^\d+$/.test(value) || Number(value) < min || Number(value) > max)) {
+    throw new Error("Lubatud muugid peavad olema täisarvud vahemikus " + min + "–" + max + ", komadega eraldatult.");
+  }
+  return [...new Set(tokens.map(Number))].sort((a, b) => a - b);
+}
+
+async function calculateRekey(sourceSnapshot, lostKeyId, pinOverrides = null) {
   validateRekeySource(sourceSnapshot);
+  const originalSettings = deepClone(sourceSnapshot.settings || {});
+  if (pinOverrides) {
+    for (const [name, min, max] of [
+      ["allowedStandardPins", 0, 9], ["allowedMasterPins", 2, 8]
+    ]) {
+      const pins = pinOverrides[name];
+      if (!Array.isArray(pins) || !pins.length ||
+          pins.some(pin => !Number.isInteger(pin) || pin < min || pin > max)) {
+        throw new Error("Vigane lubatud muukide valik: " + name);
+      }
+    }
+    sourceSnapshot = deepClone(sourceSnapshot);
+    sourceSnapshot.settings = {
+      ...originalSettings,
+      allowedStandardPins: [...new Set(pinOverrides.allowedStandardPins)].sort((a, b) => a - b),
+      allowedMasterPins: [...new Set(pinOverrides.allowedMasterPins)].sort((a, b) => a - b)
+    };
+  }
 
   const generatedKeys = sourceSnapshot.generated.keys;
   const cylinders = sourceSnapshot.generated.cylinders;
@@ -279,6 +349,8 @@ async function calculateRekey(sourceSnapshot, lostKeyId) {
   const affectedDoorNames = best.changedCylinders.map(item => item.door.name);
   newSnapshot.rekey = {
     type: "LOST_KEY",
+    pinSettingsBefore: originalSettings,
+    pinSettingsAfter: deepClone(newSnapshot.settings || {}),
     sourceProjectVersion: sourceSnapshot.project.projectVersion,
     createdAt: now,
     keyId: lostKey.id,
@@ -595,6 +667,11 @@ function renderRekeyResult(result) {
   `).join("");
 
   target.innerHTML = `
+    <div class="status">
+      <strong>Arvutuses kasutatud tavamuugid:</strong> ${escapeHtml((result.snapshot.settings?.allowedStandardPins || []).join(", "))}<br>
+      <strong>Arvutuses kasutatud sarjamuugid:</strong> ${escapeHtml((result.snapshot.settings?.allowedMasterPins || []).join(", "))}<br>
+      MACS: ${Number(result.snapshot.settings?.qualityRules?.macs ?? 4)}. Turvakontrollid läbitud.
+    </div>
     <div class="rekey-summary">
       <div><strong>Vana võtmekood:</strong> <span class="code">${escapeHtml(result.oldCode.join(""))}</span></div>
       <div><strong>Uus võtmekood:</strong> <span class="code">${escapeHtml(result.newCode.join(""))}</span></div>

@@ -133,6 +133,18 @@
             <select id="rekeyKeySelect"></select>
             <button id="calculateRekeyBtn" type="button">Arvuta Rekey</button>
           </div>
+          <fieldset id="rekeyPinSettings">
+            <legend>Lubatud muugid selleks Rekey arvutuseks</legend>
+            <div class="form-row">
+              <label for="rekeyStandardPinsInput">Tavamuugid (0–9)</label>
+              <input id="rekeyStandardPinsInput" type="text" aria-describedby="rekeyPinSettingsHelp" />
+            </div>
+            <div class="form-row">
+              <label for="rekeyMasterPinsInput">Sarjamuugid (2–8)</label>
+              <input id="rekeyMasterPinsInput" type="text" aria-describedby="rekeyPinSettingsHelp" />
+            </div>
+            <p id="rekeyPinSettingsHelp">Sisesta väärtused komadega eraldatult. Kui lahendust ei leita, saad muuke muuta ja uuesti arvutada. MACS ja turvareeglid jäävad kehtima. Valikud salvestuvad koos uue versiooniga.</p>
+          </fieldset>
           <div id="rekeyResultStatus" class="status">Rekey pole veel arvutatud.</div>
           <div id="rekeyResult"></div>
           <div class="form-row">

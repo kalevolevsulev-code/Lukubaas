@@ -477,3 +477,13 @@ th {
   #serverMenuBtn { padding: 8px 12px; }
   .project-group { padding: 12px; }
 }
+
+@media screen {
+  #rekeyPinSettings {
+    border: 1px solid #bdd7e5; border-radius: 8px; margin: 12px 0; padding: 12px;
+    min-width: 0;
+  }
+  #rekeyPinSettings legend { color: #075b83; font-weight: 700; padding: 0 6px; }
+  #rekeyPinSettingsHelp { font-size: 12px; color: #516676; margin: 8px 0 0; }
+  #rekeyPinSettings:disabled { opacity: .65; }
+}
