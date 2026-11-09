@@ -82,7 +82,12 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.addEventListener("afterprint", cleanupPrintMode);
-    window.print();
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
   });
 });
 
