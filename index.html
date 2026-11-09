@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ABUS SFA 777 Sarjastamise Generaator V1.0.4 Security Fix Stable</title>
+  <title>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 1</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js" defer></script>
+  <script src="app.js" defer></script>\n  <script src="project-snapshot.js" defer></script>\n  <script src="server-client.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h1>ABUS SFA 777 Sarjastamise Generaator V1.0.4</h1>
+    <h1>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 1</h1>
     <div id="appHealth" class="status no-print">Kontrollin Exceli mootorit...</div>
 
     <div class="card">
@@ -76,6 +76,17 @@
     <div class="card">
       <h2>Südamike koodid</h2>
       <div id="pinningBox">Pole veel genereeritud...</div>
+    </div>
+
+    <div class="card no-print" id="snapshotCard">
+      <h2>V1.1 projekti snapshot</h2>
+      <div id="snapshotStatus" class="status">Snapshot tekib pärast projekti kinnitamist.</div>
+      <div class="form-row">
+        <button id="createSnapshotBtn" type="button" disabled>Koosta snapshot</button>
+        <button id="downloadSnapshotBtn" type="button" disabled>Laadi snapshot JSON</button>
+        <button id="saveServerBtn" type="button" disabled>Salvesta serverisse</button>
+      </div>
+      <div id="serverStatus" class="status">Serveri olek...</div>
     </div>
 
     <div class="card">
