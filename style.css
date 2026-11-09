@@ -250,3 +250,37 @@ th {
     grid-template-columns: 1fr;
   }
 }
+
+
+@media print {
+  body.server-preview-print > .container > * {
+    display: none !important;
+  }
+
+  body.server-preview-print #serverProjectsCard {
+    display: block !important;
+  }
+
+  body.server-preview-print #serverProjectsCard > h2,
+  body.server-preview-print #serverProjectsCard > .form-row,
+  body.server-preview-print #projectsListStatus,
+  body.server-preview-print #projectsList {
+    display: none !important;
+  }
+
+  body.server-preview-print #projectPreview {
+    display: block !important;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  body.server-preview-print #projectPreview > .form-row,
+  body.server-preview-print #projectPreviewStatus {
+    display: none !important;
+  }
+
+  body.server-preview-print #projectPreviewContent {
+    display: block !important;
+  }
+}
