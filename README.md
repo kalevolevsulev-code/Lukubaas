@@ -21,3 +21,60 @@ Exceli lugemiseks kasutab rakendus CDN-ist SheetJS xlsx@0.18.5 teeki; selle laad
 ## Kontrollimine
 
 JavaScripti süntaks, HTML-i kohalikud viited ning RC1 ja Stable generaatoriloogika samasus on kontrollitud. Täielik Exceli importimise, genereerimise ja printimise kasutajaliidese läbimäng vajab esinduslikku Exceli sisendfaili.
+
+## V1.0.4 Stable sisaldab
+
+- projektikood
+- tellimuse number
+- Exceli avamismaatriksi import
+- ühtne koguste struktuur B2 = `kogus`
+- võtmete koguste import
+- südamike koguste import
+- reservkogus 0
+- puuduva aktiivse koguse valideerimine
+- valideerimine ja hoiatused
+- võtmete hierarhia kuvamine tegelike avamisõiguste järgi
+- subset-põhine hierarhia kontroll
+- lubatud tavamuukide valik
+- lubatud sarjamuukide valik
+- võtmekoodide genereerimine
+- südamike pinningu genereerimine
+- MACS ja muud kvaliteedireeglid
+- ristiavamise kontroll
+- `NO_UPCUT_TO_HIGHER_LEVEL` turvareegel
+- kogu süsteemi lõplik turvakontroll
+- projekti kinnitamine ja lukustamine
+- kinnitatud projekti trükk / PDF-i salvestamine brauseri kaudu
+
+## V1.0.4 Stable ei sisalda
+
+- Rekey
+- Add Key
+- auditlogi
+- serveripõhine andmebaas
+- JSON projekti import/eksport
+- ABUS V14
+- Capacity režiim suurtele süsteemidele
+
+## Edasine arendus
+
+### V1.1
+- projekti snapshot
+- mini-server
+- kinnitatud projektide salvestamine
+- projektide nimekiri ja avamine
+- versioonihaldus
+
+### V1.2
+- auditlogi
+- JSON import/eksport
+
+### V1.3
+- Rekey
+- Add Key
+
+### V2
+- ABUS V14
+- Quality / Balanced / Capacity režiimid
+- suurte süsteemide hierarhiline generaator
+
