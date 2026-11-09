@@ -288,6 +288,29 @@ function renderProjectPreview(project) {
   </div>`;
 
   // Kontroll — snapshotis talletatud kinnitatud kontrollitulemus
+  if (snapshot.rekey) {
+    const rekey = snapshot.rekey;
+    const affectedDoorNames = (Array.isArray(rekey.affectedDoorNames) && rekey.affectedDoorNames.length)
+      ? rekey.affectedDoorNames
+      : (Array.isArray(rekey.affectedDoorIds) ? rekey.affectedDoorIds.map(doorId => doorById.get(doorId)?.name || doorId) : []);
+
+    html += `<div class="card change-summary-card">
+      <h2>Muudatuste kokkuvõte</h2>
+      <div class="status">
+        <strong>Muudatuse tüüp:</strong> Rekey – kadunud võti<br>
+        <strong>Eelmine versioon:</strong> V${rekey.sourceProjectVersion}<br>
+        <strong>Muudetud võti:</strong> ${escapeHtml(rekey.keyName || rekey.keyId || "-")}<br>
+        <strong>Vana võtmekood:</strong> <span class="code">${escapeHtml(Array.isArray(rekey.oldCode) ? rekey.oldCode.join("") : "")}</span><br>
+        <strong>Uus võtmekood:</strong> <span class="code">${escapeHtml(Array.isArray(rekey.newCode) ? rekey.newCode.join("") : "")}</span><br>
+        <strong>Muudetud südamikke:</strong> ${Number(rekey.changedCylinderCount || 0)}<br>
+        <strong>Muudetud kambreid:</strong> ${Number(rekey.changedChamberCount || 0)}<br>
+        <strong>Mõjutatud uksed:</strong> ${affectedDoorNames.map(escapeHtml).join(", ") || "-"}<br>
+        <strong>Muudatuse aeg:</strong> ${escapeHtml(formatDateTime(rekey.createdAt))}
+      </div>
+      ${rekey.comment ? `<div class="status"><strong>Kommentaar:</strong> ${escapeHtml(rekey.comment)}</div>` : ""}
+    </div>`;
+  }
+
   html += `<div class="card">
     <h2>Kontroll</h2>`;
 
