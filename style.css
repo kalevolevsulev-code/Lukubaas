@@ -257,6 +257,10 @@ th {
     display: none !important;
   }
 
+  body.server-preview-print #serverView {
+    display: block !important;
+  }
+
   body.server-preview-print #serverProjectsCard {
     display: block !important;
   }
