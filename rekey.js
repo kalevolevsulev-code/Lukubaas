@@ -68,19 +68,41 @@ window.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("server-project-opened", event => {
   const project = event.detail?.project;
+  const latestVersion = Number(event.detail?.latestVersion || project?.projectVersion || 0);
+  const isLatestVersion = event.detail?.isLatestVersion !== false;
+
   if (!project?.snapshot) return;
 
-  rekeySourceProject = project;
+  rekeySourceProject = isLatestVersion ? project : null;
   rekeyCandidateSnapshot = null;
 
   const panel = document.getElementById("rekeyPanel");
   const select = document.getElementById("rekeyKeySelect");
+  const calculateBtn = document.getElementById("calculateRekeyBtn");
   const saveBtn = document.getElementById("saveRekeyBtn");
 
   panel.hidden = false;
   saveBtn.disabled = true;
   saveBtn.textContent = "Salvesta uus versioon serverisse";
   document.getElementById("rekeyResult").innerHTML = "";
+
+  if (!isLatestVersion) {
+    select.innerHTML = "";
+    select.disabled = true;
+    calculateBtn.disabled = true;
+    document.getElementById("rekeySourceStatus").className = "warning";
+    document.getElementById("rekeySourceStatus").textContent =
+      "Read-only: V" + project.projectVersion +
+      " ei ole enam muudetav. Projekti viimane versioon on V" + latestVersion +
+      ". Uus Rekey tuleb teha V" + latestVersion + " pealt.";
+    renderRekeyStatus(
+      "See versioon on ajalugu ja jääb muutmata. Ava V" + latestVersion + ", et teha järgmine muudatus."
+    );
+    return;
+  }
+
+  select.disabled = false;
+  calculateBtn.disabled = false;
 
   const keys = Array.isArray(project.snapshot.generated?.keys)
     ? project.snapshot.generated.keys
@@ -89,12 +111,17 @@ window.addEventListener("server-project-opened", event => {
   select.innerHTML = keys
     .filter(key => Array.isArray(key.code) && key.code.length > 0)
     .map(key =>
-      `<option value="${escapeHtml(key.id)}">${escapeHtml(key.name)} — ${escapeHtml(key.code.join(""))}</option>`
+      '<option value="' + escapeHtml(key.id) + '">' +
+      escapeHtml(key.name) + " — " + escapeHtml(key.code.join("")) +
+      "</option>"
     )
     .join("");
 
+  document.getElementById("rekeySourceStatus").className = "status";
   document.getElementById("rekeySourceStatus").textContent =
-    `Projekt: ${project.projectCode} / V${project.projectVersion}. Rekey loob uue V${project.projectVersion + 1} versiooni; praegune versioon jääb muutmata.`;
+    "Projekt: " + project.projectCode + " / V" + project.projectVersion +
+    ". Rekey loob uue V" + (project.projectVersion + 1) +
+    " versiooni; praegune versioon jääb muutmata.";
 
   renderRekeyStatus("Vali kadunud võti ja vajuta „Arvuta Rekey“.");
 });
