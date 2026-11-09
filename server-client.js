@@ -5,6 +5,7 @@
 
 const SERVER_ENDPOINT = "/.netlify/functions/projects";
 const SERVER_TIMEOUT_MS = 8000;
+window.latestProjectVersionByCode = new Map();
 
 document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveServerBtn");
@@ -179,6 +180,14 @@ async function loadProjectList() {
       throw new Error("Projektide nimekirja laadimine ebaõnnestus: serveri vastuses puudub projektide loend.");
     }
 
+    window.latestProjectVersionByCode = new Map();
+    payload.projects.forEach(project => {
+      const current = window.latestProjectVersionByCode.get(project.projectCode) || 0;
+      if (project.projectVersion > current) {
+        window.latestProjectVersionByCode.set(project.projectCode, project.projectVersion);
+      }
+    });
+
     renderProjectList(payload.projects);
     const uniqueProjects = new Set(payload.projects.map(project => project.projectCode)).size;
     status.className = "status";
@@ -270,13 +279,24 @@ async function openServerProject(projectId) {
     validateOpenedProject(payload.project);
     renderProjectPreview(payload.project);
     window.currentServerProject = payload.project;
+
+    const latestVersion =
+      window.latestProjectVersionByCode.get(payload.project.projectCode) ||
+      payload.project.projectVersion;
+    const isLatestVersion = payload.project.projectVersion === latestVersion;
+
     window.dispatchEvent(new CustomEvent("server-project-opened", {
-      detail: { project: payload.project }
+      detail: {
+        project: payload.project,
+        latestVersion,
+        isLatestVersion
+      }
     }));
 
     status.className = "status";
-    status.textContent =
-      `Avatud ainult vaatamiseks • ${payload.project.projectCode} / V${payload.project.projectVersion}`;
+    status.textContent = isLatestVersion
+      ? `Avatud • ${payload.project.projectCode} / V${payload.project.projectVersion} • viimane versioon`
+      : `Avatud ainult vaatamiseks • ${payload.project.projectCode} / V${payload.project.projectVersion} • viimane versioon on V${latestVersion}`;
     document.getElementById("printServerProjectBtn").disabled = false;
   } catch (error) {
     status.className = "error";
