@@ -11,6 +11,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const status = document.getElementById("serverStatus");
   const refreshBtn = document.getElementById("refreshProjectsBtn");
   const printServerProjectBtn = document.getElementById("printServerProjectBtn");
+  const serverMenuBtn = document.getElementById("serverMenuBtn");
+  const backToGeneratorBtn = document.getElementById("backToGeneratorBtn");
+  const generatorView = document.getElementById("generatorView");
+  const serverView = document.getElementById("serverView");
 
   status.className = "status";
   status.textContent = "Server: valmis ühenduse testimiseks.";
@@ -47,6 +51,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  serverMenuBtn.addEventListener("click", () => {
+    generatorView.hidden = true;
+    serverView.hidden = false;
+    loadProjectList();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  backToGeneratorBtn.addEventListener("click", () => {
+    serverView.hidden = true;
+    generatorView.hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
   refreshBtn.addEventListener("click", loadProjectList);
   printServerProjectBtn.addEventListener("click", () => {
     const preview = document.getElementById("projectPreview");
@@ -61,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.print();
     document.body.classList.remove("server-preview-print");
   });
-  loadProjectList();
 });
 
 async function saveSnapshotToServer(snapshot) {
