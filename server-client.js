@@ -135,9 +135,10 @@ async function loadProjectList() {
     }
 
     renderProjectList(payload.projects);
+    const uniqueProjects = new Set(payload.projects.map(project => project.projectCode)).size;
     status.className = "status";
     status.textContent = payload.projects.length
-      ? `Serveris on ${payload.projects.length} projekti versiooni.`
+      ? `Serveris on ${uniqueProjects} projekti ja ${payload.projects.length} versiooni.`
       : "Serveris pole veel ühtegi salvestatud projekti.";
   } catch (error) {
     list.innerHTML = "";
@@ -156,35 +157,38 @@ function renderProjectList(projects) {
     return;
   }
 
-  const rows = projects.map(project => {
-    const confirmed = formatDateTime(project.confirmedAt || project.createdAt);
-    return `
-      <tr>
-        <td>${escapeHtml(project.projectCode)}</td>
-        <td>V${Number(project.projectVersion)}</td>
-        <td>${escapeHtml(project.profile || "")}</td>
-        <td>${escapeHtml(confirmed)}</td>
-        <td>${escapeHtml(project.engineVersion || "")}</td>
-        <td><button type="button" class="open-project-btn" data-project-id="${escapeHtml(project.id)}">Ava eelvaade</button></td>
-      </tr>
-    `;
-  }).join("");
+  const grouped = new Map();
 
-  list.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Projekt</th>
-          <th>Versioon</th>
-          <th>Profiil</th>
-          <th>Kinnitatud</th>
-          <th>Engine</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
+  projects.forEach(project => {
+    if (!grouped.has(project.projectCode)) grouped.set(project.projectCode, []);
+    grouped.get(project.projectCode).push(project);
+  });
+
+  const groups = [...grouped.entries()]
+    .map(([projectCode, versions]) => {
+      const sortedVersions = [...versions].sort((a, b) => b.projectVersion - a.projectVersion);
+      return { projectCode, versions: sortedVersions, latest: sortedVersions[0] };
+    })
+    .sort((a, b) => new Date(b.latest.createdAt || 0) - new Date(a.latest.createdAt || 0));
+
+  list.innerHTML = groups.map(group => {
+    const versionButtons = group.versions.map(version => {
+      return '<button type="button" class="open-project-btn version-btn" data-project-id="' +
+        escapeHtml(version.id) + '">Ava V' + version.projectVersion + '</button>';
+    }).join("");
+
+    return '<div class="project-group">' +
+      '<div class="project-group-main">' +
+        '<div><strong>' + escapeHtml(group.projectCode) + '</strong>' +
+        '<div class="project-group-meta">' +
+          escapeHtml(group.latest.profile || "") +
+          ' • viimane versioon V' + group.latest.projectVersion +
+          ' • ' + escapeHtml(formatDateTime(group.latest.confirmedAt || group.latest.createdAt)) +
+        '</div></div>' +
+      '</div>' +
+      '<div class="project-version-buttons">' + versionButtons + '</div>' +
+    '</div>';
+  }).join("");
 
   list.querySelectorAll(".open-project-btn").forEach(button => {
     button.addEventListener("click", () => openServerProject(button.dataset.projectId));
