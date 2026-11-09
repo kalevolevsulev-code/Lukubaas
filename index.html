@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 2</title>
+  <title>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 3</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js" defer></script>\n  <script src="project-snapshot.js" defer></script>\n  <script src="server-client.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h1>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 2</h1>
+    <div class="app-header no-print">
+      <h1>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 3</h1>
+      <button id="serverMenuBtn" type="button">Server</button>
+    </div>
     <div id="appHealth" class="status no-print">Kontrollin Exceli mootorit...</div>
+
+    <div id="generatorView">
 
     <div class="card">
       <h2>1. Projekt</h2>
@@ -96,6 +101,32 @@
         <button id="printProjectBtn" type="button" disabled>Trüki projekt</button>
       </div>
       <div id="projectStatus" class="status">Staatus: TÖÖS</div>
+    </div>
+    </div>
+
+    <div id="serverView" hidden>
+      <div class="server-view-header no-print">
+        <h2>Server</h2>
+        <button id="backToGeneratorBtn" type="button">Tagasi generaatorisse</button>
+      </div>
+    <div class="card no-print" id="serverProjectsCard">
+      <h2>Serverisse salvestatud projektid</h2>
+      <div class="form-row">
+        <button id="refreshProjectsBtn" type="button">Värskenda nimekirja</button>
+      </div>
+      <div id="projectsListStatus" class="status">Projektide nimekirja pole veel laaditud.</div>
+      <div id="projectsList"></div>
+
+      <div id="projectPreview" class="project-preview" hidden>
+        <div class="form-row">
+          <h3>Projekti eelvaade</h3>
+          <button id="printServerProjectBtn" type="button" disabled>Trüki projekt</button>
+        </div>
+        <div id="projectPreviewStatus" class="status"></div>
+        <div id="projectPreviewContent"></div>
+      </div>
+    </div>
+
     </div>
   </div>
 </body>
