@@ -59,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   backToGeneratorBtn.addEventListener("click", () => {
+    resetServerViewState();
     serverView.hidden = true;
     generatorView.hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -90,6 +91,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+function resetServerViewState() {
+  const preview = document.getElementById("projectPreview");
+  const previewStatus = document.getElementById("projectPreviewStatus");
+  const previewContent = document.getElementById("projectPreviewContent");
+  const printBtn = document.getElementById("printServerProjectBtn");
+  const rekeyPanel = document.getElementById("rekeyPanel");
+  const rekeyResult = document.getElementById("rekeyResult");
+  const rekeyResultStatus = document.getElementById("rekeyResultStatus");
+  const rekeySourceStatus = document.getElementById("rekeySourceStatus");
+  const rekeySelect = document.getElementById("rekeyKeySelect");
+  const saveRekeyBtn = document.getElementById("saveRekeyBtn");
+
+  if (preview) preview.hidden = true;
+  if (previewStatus) {
+    previewStatus.className = "status";
+    previewStatus.textContent = "";
+  }
+  if (previewContent) previewContent.innerHTML = "";
+  if (printBtn) printBtn.disabled = true;
+
+  if (rekeyPanel) rekeyPanel.hidden = true;
+  if (rekeyResult) rekeyResult.innerHTML = "";
+  if (rekeyResultStatus) {
+    rekeyResultStatus.className = "status";
+    rekeyResultStatus.textContent = "Rekey pole veel arvutatud.";
+  }
+  if (rekeySourceStatus) {
+    rekeySourceStatus.className = "status";
+    rekeySourceStatus.textContent = "Ava serverist projekt.";
+  }
+  if (rekeySelect) rekeySelect.innerHTML = "";
+  if (saveRekeyBtn) {
+    saveRekeyBtn.disabled = true;
+    saveRekeyBtn.textContent = "Salvesta uus versioon serverisse";
+  }
+
+  window.currentServerProject = null;
+
+  if (typeof rekeySourceProject !== "undefined") rekeySourceProject = null;
+  if (typeof rekeyCandidateSnapshot !== "undefined") rekeyCandidateSnapshot = null;
+
+  document.body.classList.remove("server-preview-print");
+}
 
 async function saveSnapshotToServer(snapshot) {
   const response = await serverFetch(SERVER_ENDPOINT, {
