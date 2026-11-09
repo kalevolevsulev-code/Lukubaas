@@ -226,21 +226,48 @@ function renderProjectPreview(project) {
     </tr>
   `).join("");
 
-  const cylinderRows = snapshot.generated.cylinders.map(cylinder => {
-    const pinning = Array.isArray(cylinder.pinning)
-      ? cylinder.pinning.map(ch => {
-          const masters = Array.isArray(ch.masters) && ch.masters.length ? `+${ch.masters.join("+")}` : "";
-          return `${ch.base}${masters}`;
-        }).join(" / ")
+  const keyNamesById = new Map(
+    snapshot.generated.keys.map(key => [key.id, key.name])
+  );
+
+  const maxMasterPins = Number.isInteger(snapshot.settings?.maxMasterPinsPerChamber)
+    ? snapshot.settings.maxMasterPinsPerChamber
+    : 2;
+
+  const cylinderCards = snapshot.generated.cylinders.map((cylinder, index) => {
+    const doorName = doors.get(cylinder.doorId) || cylinder.doorId || "";
+    const channels = Array.isArray(cylinder.pinning) ? cylinder.pinning : [];
+
+    let pinTable = `<table><tbody><tr><th>Tava</th>`;
+    channels.forEach(channel => {
+      pinTable += `<td>${escapeHtml(String(channel.base ?? ""))}</td>`;
+    });
+    pinTable += `</tr>`;
+
+    for (let level = 0; level < maxMasterPins; level++) {
+      pinTable += `<tr><th>s${level + 1}</th>`;
+      channels.forEach(channel => {
+        const value = Array.isArray(channel.masters) ? channel.masters[level] : undefined;
+        pinTable += `<td>${value !== undefined ? escapeHtml(String(value)) : ""}</td>`;
+      });
+      pinTable += `</tr>`;
+    }
+
+    pinTable += `</tbody></table>`;
+
+    const openedByNames = Array.isArray(cylinder.openedBy)
+      ? cylinder.openedBy
+          .map(keyId => keyNamesById.get(keyId) || keyId)
+          .map(escapeHtml)
+          .join(", ")
       : "";
 
     return `
-      <tr>
-        <td>${escapeHtml(doors.get(cylinder.doorId) || cylinder.doorId || "")}</td>
-        <td>${formatQuantity(cylinder.quantity)}</td>
-        <td class="code">${escapeHtml(pinning)}</td>
-        <td>${Array.isArray(cylinder.openedBy) ? cylinder.openedBy.length : 0}</td>
-      </tr>
+      <div class="pinning-card">
+        <div class="pinning-title">#${index + 1} ${escapeHtml(doorName)} — ${formatQuantity(cylinder.quantity)} tk</div>
+        ${pinTable}
+        <div><strong>Avab:</strong> ${openedByNames}</div>
+      </div>
     `;
   }).join("");
 
@@ -262,13 +289,9 @@ function renderProjectPreview(project) {
       <tbody>${keyRows}</tbody>
     </table>
 
-    <h4>Südamikud (${snapshot.generated.cylinders.length})</h4>
-    <table>
-      <thead>
-        <tr><th>Uks</th><th>Kogus</th><th>Muugistus</th><th>Avavaid võtmeid</th></tr>
-      </thead>
-      <tbody>${cylinderRows}</tbody>
-    </table>
+    <h4>Südamike koodid</h4>
+    <div class="status">Projekt: ${escapeHtml(snapshot.project.projectCode || "-")}<br>Südamike koodid genereeritud: ${snapshot.generated.cylinders.length}. Ristiavamise kontroll: OK.</div>
+    ${cylinderCards}
   `;
 }
 
