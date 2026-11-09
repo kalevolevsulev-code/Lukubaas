@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 3</title>
+  <title>ABUS SFA 777 Sarjastamise Generaator V1.2 Alpha 1</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js" defer></script>\n  <script src="project-snapshot.js" defer></script>\n  <script src="server-client.js" defer></script>
+  <script src="rekey.js" defer></script>
 </head>
 <body>
   <div class="container">
     <div class="app-header no-print">
-      <h1>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 3</h1>
+      <h1>ABUS SFA 777 Sarjastamise Generaator V1.2 Alpha 1</h1>
       <button id="serverMenuBtn" type="button">Server</button>
     </div>
     <div id="appHealth" class="status no-print">Kontrollin Exceli mootorit...</div>
@@ -123,6 +124,22 @@
           <button id="printServerProjectBtn" type="button" disabled>Trüki projekt</button>
         </div>
         <div id="projectPreviewStatus" class="status"></div>
+
+        <div id="rekeyPanel" class="card rekey-panel" hidden>
+          <h2>Rekey</h2>
+          <div id="rekeySourceStatus" class="status">Ava serverist projekt.</div>
+          <div class="form-row">
+            <label for="rekeyKeySelect">Kadunud võti</label>
+            <select id="rekeyKeySelect"></select>
+            <button id="calculateRekeyBtn" type="button">Arvuta Rekey</button>
+          </div>
+          <div id="rekeyResultStatus" class="status">Rekey pole veel arvutatud.</div>
+          <div id="rekeyResult"></div>
+          <div class="form-row">
+            <button id="saveRekeyBtn" type="button" disabled>Salvesta uus versioon serverisse</button>
+          </div>
+        </div>
+
         <div id="projectPreviewContent"></div>
       </div>
     </div>
