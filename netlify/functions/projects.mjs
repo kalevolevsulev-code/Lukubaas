@@ -180,7 +180,7 @@ function validateSnapshot(snapshot) {
 
 async function supabaseFetch(path, options = {}) {
   const baseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY;
 
   if (!baseUrl || !serviceKey) {
     throw new Error("Supabase keskkonnamuutujad puuduvad.");
