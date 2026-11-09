@@ -339,3 +339,33 @@ th {
   background: #f4f4f4;
   padding: 8px 0;
 }
+
+
+/* ===== V1.2 Alpha 1: Rekey ===== */
+.rekey-panel {
+  margin-top: 16px;
+  border: 2px solid #d9eef7;
+}
+
+#rekeyKeySelect {
+  min-width: 280px;
+  padding: 8px;
+}
+
+.rekey-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin: 12px 0;
+}
+
+@media (max-width: 700px) {
+  #rekeyKeySelect {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .rekey-summary {
+    grid-template-columns: 1fr;
+  }
+}
