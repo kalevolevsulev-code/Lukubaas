@@ -188,7 +188,6 @@ async function supabaseFetch(path, options = {}) {
 
   const headers = new Headers(options.headers || {});
   headers.set("apikey", serviceKey);
-  headers.set("Authorization", `Bearer ${serviceKey}`);
 
   return fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
     ...options,
