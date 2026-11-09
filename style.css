@@ -329,3 +329,13 @@ th {
     display: none !important;
   }
 }
+
+
+/* Keep the main navigation available while working on long projects */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #f4f4f4;
+  padding: 8px 0;
+}
