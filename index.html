@@ -10,8 +10,13 @@
 </head>
 <body>
   <div class="container">
-    <h1>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 3</h1>
+    <div class="app-header no-print">
+      <h1>ABUS SFA 777 Sarjastamise Generaator V1.1 Alpha 3</h1>
+      <button id="serverMenuBtn" type="button">Server</button>
+    </div>
     <div id="appHealth" class="status no-print">Kontrollin Exceli mootorit...</div>
+
+    <div id="generatorView">
 
     <div class="card">
       <h2>1. Projekt</h2>
@@ -78,6 +83,21 @@
       <div id="pinningBox">Pole veel genereeritud...</div>
     </div>
 
+    <div class="card">
+      <h2>Projekti staatus</h2>
+      <div class="no-print">
+        <button id="confirmProjectBtn" type="button">Kinnita koodid</button>
+        <button id="printProjectBtn" type="button" disabled>Trüki projekt</button>
+      </div>
+      <div id="projectStatus" class="status">Staatus: TÖÖS</div>
+    </div>
+    </div>
+
+    <div id="serverView" hidden>
+      <div class="server-view-header no-print">
+        <h2>Server</h2>
+        <button id="backToGeneratorBtn" type="button">Tagasi generaatorisse</button>
+      </div>
     <div class="card no-print" id="snapshotCard">
       <h2>V1.1 projekti snapshot</h2>
       <div id="snapshotStatus" class="status">Snapshot tekib pärast projekti kinnitamist.</div>
@@ -107,13 +127,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2>Projekti staatus</h2>
-      <div class="no-print">
-        <button id="confirmProjectBtn" type="button">Kinnita koodid</button>
-        <button id="printProjectBtn" type="button" disabled>Trüki projekt</button>
-      </div>
-      <div id="projectStatus" class="status">Staatus: TÖÖS</div>
     </div>
   </div>
 </body>
