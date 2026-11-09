@@ -369,3 +369,34 @@ th {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== Project version grouping ===== */
+.project-group {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.project-group-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #555;
+}
+
+.project-version-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.project-version-buttons button {
+  margin-left: 0;
+}
+
+.change-summary-card {
+  border-left: 4px solid #00a3e0;
+}
