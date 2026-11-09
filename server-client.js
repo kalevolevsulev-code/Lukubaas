@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveServerBtn");
   const status = document.getElementById("serverStatus");
   const refreshBtn = document.getElementById("refreshProjectsBtn");
+  const printServerProjectBtn = document.getElementById("printServerProjectBtn");
 
   status.className = "status";
   status.textContent = "Server: valmis ühenduse testimiseks.";
@@ -47,6 +48,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   refreshBtn.addEventListener("click", loadProjectList);
+  printServerProjectBtn.addEventListener("click", () => {
+    const preview = document.getElementById("projectPreview");
+    if (preview.hidden) {
+      document.getElementById("projectPreviewStatus").className = "error";
+      document.getElementById("projectPreviewStatus").textContent =
+        "Trükkimine ebaõnnestus: ava enne serverist projekt.";
+      return;
+    }
+
+    document.body.classList.add("server-preview-print");
+    window.print();
+    document.body.classList.remove("server-preview-print");
+  });
   loadProjectList();
 });
 
@@ -156,6 +170,7 @@ async function openServerProject(projectId) {
   const content = document.getElementById("projectPreviewContent");
 
   preview.hidden = false;
+  document.getElementById("printServerProjectBtn").disabled = true;
   status.className = "status";
   status.textContent = "Laadin projekti eelvaadet...";
   content.innerHTML = "";
@@ -182,6 +197,7 @@ async function openServerProject(projectId) {
     status.className = "status";
     status.textContent =
       `Avatud ainult vaatamiseks • ${payload.project.projectCode} / V${payload.project.projectVersion}`;
+    document.getElementById("printServerProjectBtn").disabled = false;
   } catch (error) {
     status.className = "error";
     status.textContent = error.message || "Projekti avamine ebaõnnestus.";
