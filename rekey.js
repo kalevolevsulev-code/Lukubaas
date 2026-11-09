@@ -249,6 +249,7 @@ async function calculateRekey(sourceSnapshot, lostKeyId) {
     confirmedBy: null,
     confirmationMethod: "REKEY_UI"
   };
+  const affectedDoorNames = best.changedCylinders.map(item => item.door.name);
   newSnapshot.rekey = {
     type: "LOST_KEY",
     sourceProjectVersion: sourceSnapshot.project.projectVersion,
@@ -258,8 +259,15 @@ async function calculateRekey(sourceSnapshot, lostKeyId) {
     oldCode: [...oldCode],
     newCode: [...best.candidate],
     affectedDoorIds: best.changedCylinders.map(item => item.door.id),
+    affectedDoorNames,
     changedCylinderCount: best.changeStats.changedCylinderCount,
-    changedChamberCount: best.changeStats.changedChamberCount
+    changedChamberCount: best.changeStats.changedChamberCount,
+    comment:
+      'Rekey: kadunud võti "' + lostKey.name + '" muudeti koodilt ' +
+      oldCode.join("") + ' koodile ' + best.candidate.join("") + '. ' +
+      'Muudeti ' + best.changeStats.changedCylinderCount + ' südamikku ja ' +
+      best.changeStats.changedChamberCount + ' kambrit. Mõjutatud uksed: ' +
+      affectedDoorNames.join(", ") + '.'
   };
 
   newSnapshot.integrity.checksum = "";
