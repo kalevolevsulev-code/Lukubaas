@@ -25,7 +25,32 @@ export default async (request) => {
       return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_SECRET_KEY puudub Netlify keskkonnast." });
     }
 
-    return jsonResponse(500, { error: "Serveri sisemine viga." });
+    const runtimeMessage = error instanceof Error ? error.message : String(error || "tundmatu viga");
+    const runtimeName = error?.name || "Error";
+    const cause = error?.cause;
+    const causeCode = cause?.code || cause?.errno || "";
+    const causeMessage = cause?.message || "";
+    const causeHost = cause?.hostname || cause?.host || "";
+    const causeDetails = [
+      causeCode ? "kood " + causeCode : "",
+      causeHost ? "host " + causeHost : "",
+      causeMessage ? causeMessage : ""
+    ].filter(Boolean).join(" • ");
+
+    let action = "Kontrolli Netlify Function logi ja serveri seadistust ning proovi uuesti.";
+
+    if (/fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(runtimeMessage + " " + causeDetails)) {
+      action = "Server ei saanud Supabase'iga ühendust. Kontrolli SUPABASE_URL väärtust, Supabase projekti olekut ja Netlify Functioni võrgupääsu.";
+    } else if (/invalid url|failed to parse url/i.test(runtimeMessage + " " + causeDetails)) {
+      action = "SUPABASE_URL kuju on vigane. Kontrolli Netlify keskkonnamuutuja SUPABASE_URL väärtust.";
+    } else if (/headers/i.test(runtimeMessage + " " + causeDetails)) {
+      action = "Serverifunktsioon ei suutnud HTTP päiseid koostada. Kontrolli Netlify Functioni runtime'i ja deploy logi.";
+    }
+
+    return jsonResponse(500, {
+      error: `Serverifunktsiooni runtime viga: ${runtimeName}: ${runtimeMessage}${causeDetails ? " (" + causeDetails + ")" : ""}. ${action}`,
+      code: "SERVER_RUNTIME_ERROR"
+    });
   }
 };
 
@@ -56,6 +81,56 @@ async function handlePost(request) {
   const expectedChecksum = sha256Hex(canonicalJson(checksumSource));
   if (expectedChecksum !== snapshot.integrity.checksum) {
     return jsonResponse(400, { error: "Snapshoti checksum ei vasta sisule." });
+  }
+
+
+  const versionCheckResponse = await supabaseFetch(
+    `/rest/v1/projects?project_code=eq.${encodeURIComponent(snapshot.project.projectCode)}&select=project_version&order=project_version.desc&limit=1`,
+    { method: "GET" }
+  );
+
+  const versionCheckText = await versionCheckResponse.text();
+  if (!versionCheckResponse.ok) {
+    console.error("Supabase version check failed", versionCheckResponse.status, versionCheckText);
+    return jsonResponse(502, {
+      error: "Projektiversiooni kontroll ebaõnnestus: server ei saanud viimast versiooni andmebaasist kontrollida."
+    });
+  }
+
+  let versionRows;
+  try {
+    versionRows = JSON.parse(versionCheckText);
+  } catch {
+    return jsonResponse(502, {
+      error: "Projektiversiooni kontroll ebaõnnestus: andmebaasi vastus ei olnud loetav."
+    });
+  }
+
+  const latestVersion = Array.isArray(versionRows) && versionRows[0]
+    ? Number(versionRows[0].project_version)
+    : 0;
+  const incomingVersion = snapshot.project.projectVersion;
+
+  if (latestVersion === 0 && incomingVersion !== 1) {
+    return jsonResponse(409, {
+      error: "Projektiversiooni salvestamine ebaõnnestus: uut projekti saab alustada ainult versioonist V1."
+    });
+  }
+
+  if (latestVersion > 0 && incomingVersion !== latestVersion + 1) {
+    return jsonResponse(409, {
+      error:
+        `Projektiversiooni salvestamine ebaõnnestus: projekti ${snapshot.project.projectCode} viimane versioon on V${latestVersion}. ` +
+        `Uus versioon peab olema V${latestVersion + 1}. Vanemat versiooni muuta ega sellest uut haru luua ei saa.`
+    });
+  }
+
+  if (snapshot.rekey && Number(snapshot.rekey.sourceProjectVersion) !== latestVersion) {
+    return jsonResponse(409, {
+      error:
+        `Rekey salvestamine ebaõnnestus: Rekey lähteversioon on V${snapshot.rekey.sourceProjectVersion}, ` +
+        `aga projekti viimane versioon on V${latestVersion}. Ava V${latestVersion} ja tee muudatus selle pealt.`
+    });
   }
 
   const row = {
@@ -181,7 +256,7 @@ async function handleGet(request) {
     : MAX_LIST_LIMIT;
 
   const response = await supabaseFetch(
-    `/rest/v1/projects?select=id,project_code,project_version,profile,status,engine_version,confirmed_at,checksum,created_at&order=created_at.desc&limit=${limit}`,
+    `/rest/v1/projects?select=id,project_code,project_version,profile,status,engine_version,confirmed_at,checksum,created_at,snapshot&order=created_at.desc&limit=${limit}`,
     { method: "GET" }
   );
 
@@ -204,6 +279,7 @@ async function handleGet(request) {
     projects: rows.map(row => ({
       id: row.id,
       projectCode: row.project_code,
+      orderNumber: row.snapshot?.project?.orderNumber || "",
       projectVersion: row.project_version,
       profile: row.profile,
       status: row.status,

@@ -339,3 +339,151 @@ th {
   background: #f4f4f4;
   padding: 8px 0;
 }
+
+
+/* ===== V1.2 Alpha 1: Rekey ===== */
+.rekey-panel {
+  margin-top: 16px;
+  border: 2px solid #d9eef7;
+}
+
+#rekeyKeySelect {
+  min-width: 280px;
+  padding: 8px;
+}
+
+.rekey-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin: 12px 0;
+}
+
+@media (max-width: 700px) {
+  #rekeyKeySelect {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .rekey-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ===== Project version grouping ===== */
+.project-group {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.project-group-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #555;
+}
+
+.project-version-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.project-version-buttons button {
+  margin-left: 0;
+}
+
+.change-summary-card {
+  border-left: 4px solid #00a3e0;
+}
+
+/* ABUS-LUKUBAAS visual refresh. Screen-only to preserve project printing. */
+@media screen {
+  body { background: #f3f6f9; color: #243447; margin: 16px; line-height: 1.45; }
+  .app-header {
+    background: #fff; padding: 10px 16px; margin-bottom: 12px;
+    border-radius: 10px; box-shadow: 0 2px 10px rgba(26,52,73,.08);
+    gap: 12px;
+  }
+  .app-header h1 { color: #075b83; font-size: 23px; letter-spacing: .04em; line-height: 1.2; }
+  button {
+    background: #fff; color: #29465c; border: 1px solid #c4d2dd;
+    border-radius: 6px; padding: 8px 12px; font: inherit; font-size: 13px;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover:not(:disabled) { background: #eaf5fc; border-color: #1687b8; }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid #00a3e0; outline-offset: 3px;
+  }
+  #serverMenuBtn {
+    background: #07658e; border-color: #07658e; color: white;
+    font-weight: 700; padding: 9px 20px; margin: 0;
+  }
+  #serverMenuBtn:hover { background: #054c6c; border-color: #054c6c; }
+  .card {
+    padding: 14px 16px; margin-bottom: 12px; border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(26,52,73,.06);
+  }
+  h2 { font-size: 18px; margin: 0 0 12px; color: #243e53; }
+  h3 { margin: 0; }
+  .form-row { gap: 8px; margin-bottom: 10px; }
+  .status { padding: 8px 10px; margin: 8px 0; }
+  #appHealth { font-size: 12px; padding: 5px 10px; margin-bottom: 12px; }
+  .server-view-header { margin: 16px 0 12px; }
+  #projectsList { display: grid; gap: 10px; margin-top: 12px; }
+  .project-group {
+    margin: 0; padding: 14px 16px; border: 0; border-left: 4px solid #1687b8;
+    border-radius: 8px; background: #f8fbfd;
+  }
+  .project-group-main strong { font-size: 17px; color: #173f59; overflow-wrap: anywhere; }
+  .project-group-meta { margin-top: 4px; color: #5d6e7d; font-size: 12px; }
+  .project-version-buttons { gap: 6px; margin-top: 12px; }
+  .project-version-buttons .version-btn {
+    margin: 0; padding: 6px 10px; min-height: 32px; font-size: 12px;
+    font-weight: 600; background: #edf0f3; border-color: #d6dde3; color: #596775;
+  }
+  .project-version-buttons .version-btn::after {
+    content: " · Ainult vaatamiseks"; font-size: 11px; font-weight: 400;
+  }
+  /* renderProjectList already sorts each project's versions newest first. */
+  .project-version-buttons .version-btn:first-child {
+    color: #075b83; background: #e3f4fc; border-color: #87c5e0;
+  }
+  .project-version-buttons .version-btn:first-child::after {
+    content: "Aktiivne"; display: inline-block; margin-left: 8px; padding: 1px 6px;
+    border-radius: 4px; background: #075b83; color: #fff; font-size: 10px; font-weight: 700;
+  }
+  .project-preview { margin-top: 16px; padding-top: 16px; border-top: 1px solid #dce6ee; }
+  .pinning-card { border: 0; background: #f5f8fa; padding: 10px 12px; margin-bottom: 10px; }
+  .rekey-panel, .change-summary-card {
+    border: 0; border-left: 4px solid #1687b8; background: #edf7fc; box-shadow: none;
+  }
+  .rekey-panel { margin-top: 12px; padding: 16px; }
+  .rekey-panel h2 { color: #075b83; }
+  #calculateRekeyBtn, #saveRekeyBtn { background: #07658e; border-color: #07658e; color: white; }
+  #calculateRekeyBtn:hover:not(:disabled), #saveRekeyBtn:hover:not(:disabled) { background: #054c6c; }
+  .rekey-panel:has(#rekeyKeySelect:disabled) {
+    background: #f1f3f5; border-left-color: #8997a3;
+  }
+  .rekey-panel:has(#rekeyKeySelect:disabled) h2 { color: #596775; }
+}
+@media screen and (max-width: 700px) {
+  .app-header { flex-direction: row; align-items: center; padding: 10px 12px; }
+  .app-header h1 { font-size: 19px; }
+  #serverMenuBtn { padding: 8px 12px; }
+  .project-group { padding: 12px; }
+}
+
+@media screen {
+  #rekeyPinSettings {
+    border: 1px solid #bdd7e5; border-radius: 8px; margin: 12px 0; padding: 12px;
+    min-width: 0;
+  }
+  #rekeyPinSettings legend { color: #075b83; font-weight: 700; padding: 0 6px; }
+  #rekeyPinSettingsHelp { font-size: 12px; color: #516676; margin: 8px 0 0; }
+  #rekeyPinSettings:disabled { opacity: .65; }
+}

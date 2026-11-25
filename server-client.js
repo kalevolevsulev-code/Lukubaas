@@ -5,6 +5,7 @@
 
 const SERVER_ENDPOINT = "/.netlify/functions/projects";
 const SERVER_TIMEOUT_MS = 8000;
+window.latestProjectVersionByCode = new Map();
 
 document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveServerBtn");
@@ -59,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   backToGeneratorBtn.addEventListener("click", () => {
+    resetServerViewState();
     serverView.hidden = true;
     generatorView.hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -91,6 +93,50 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+function resetServerViewState() {
+  const preview = document.getElementById("projectPreview");
+  const previewStatus = document.getElementById("projectPreviewStatus");
+  const previewContent = document.getElementById("projectPreviewContent");
+  const printBtn = document.getElementById("printServerProjectBtn");
+  const rekeyPanel = document.getElementById("rekeyPanel");
+  const rekeyResult = document.getElementById("rekeyResult");
+  const rekeyResultStatus = document.getElementById("rekeyResultStatus");
+  const rekeySourceStatus = document.getElementById("rekeySourceStatus");
+  const rekeySelect = document.getElementById("rekeyKeySelect");
+  const saveRekeyBtn = document.getElementById("saveRekeyBtn");
+
+  if (preview) preview.hidden = true;
+  if (previewStatus) {
+    previewStatus.className = "status";
+    previewStatus.textContent = "";
+  }
+  if (previewContent) previewContent.innerHTML = "";
+  if (printBtn) printBtn.disabled = true;
+
+  if (rekeyPanel) rekeyPanel.hidden = true;
+  if (rekeyResult) rekeyResult.innerHTML = "";
+  if (rekeyResultStatus) {
+    rekeyResultStatus.className = "status";
+    rekeyResultStatus.textContent = "Rekey pole veel arvutatud.";
+  }
+  if (rekeySourceStatus) {
+    rekeySourceStatus.className = "status";
+    rekeySourceStatus.textContent = "Ava serverist projekt.";
+  }
+  if (rekeySelect) rekeySelect.innerHTML = "";
+  if (saveRekeyBtn) {
+    saveRekeyBtn.disabled = true;
+    saveRekeyBtn.textContent = "Salvesta uus versioon serverisse";
+  }
+
+  window.currentServerProject = null;
+
+  if (typeof rekeySourceProject !== "undefined") rekeySourceProject = null;
+  if (typeof rekeyCandidateSnapshot !== "undefined") rekeyCandidateSnapshot = null;
+
+  document.body.classList.remove("server-preview-print");
+}
+
 async function saveSnapshotToServer(snapshot) {
   const response = await serverFetch(SERVER_ENDPOINT, {
     method: "POST",
@@ -99,11 +145,19 @@ async function saveSnapshotToServer(snapshot) {
   }, "Serverisse salvestamine");
 
   if (!response.ok) {
-    if (response.status === 409) {
-      throw new Error("Sama projektikood ja versioon on juba serveris olemas.");
-    }
     const payload = await safeJson(response, "Serverisse salvestamine");
-    throw new Error(payload?.error || "Serverisse salvestamine ebaõnnestus. Kontrolli serveri seadistust ja proovi uuesti.");
+
+    if (response.status === 409) {
+      throw new Error(
+        payload?.error ||
+        "Serverisse salvestamine ebaõnnestus: projektiversioon on vastuolus serveris oleva versiooniajalooga."
+      );
+    }
+
+    throw new Error(
+      payload?.error ||
+      "Serverisse salvestamine ebaõnnestus. Kontrolli serveri seadistust ja proovi uuesti."
+    );
   }
 
   return safeJson(response, "Serverisse salvestamine");
@@ -134,10 +188,19 @@ async function loadProjectList() {
       throw new Error("Projektide nimekirja laadimine ebaõnnestus: serveri vastuses puudub projektide loend.");
     }
 
+    window.latestProjectVersionByCode = new Map();
+    payload.projects.forEach(project => {
+      const current = window.latestProjectVersionByCode.get(project.projectCode) || 0;
+      if (project.projectVersion > current) {
+        window.latestProjectVersionByCode.set(project.projectCode, project.projectVersion);
+      }
+    });
+
     renderProjectList(payload.projects);
+    const uniqueProjects = new Set(payload.projects.map(project => project.projectCode)).size;
     status.className = "status";
     status.textContent = payload.projects.length
-      ? `Serveris on ${payload.projects.length} projekti versiooni.`
+      ? `Serveris on ${uniqueProjects} projekti ja ${payload.projects.length} versiooni.`
       : "Serveris pole veel ühtegi salvestatud projekti.";
   } catch (error) {
     list.innerHTML = "";
@@ -156,35 +219,40 @@ function renderProjectList(projects) {
     return;
   }
 
-  const rows = projects.map(project => {
-    const confirmed = formatDateTime(project.confirmedAt || project.createdAt);
-    return `
-      <tr>
-        <td>${escapeHtml(project.projectCode)}</td>
-        <td>V${Number(project.projectVersion)}</td>
-        <td>${escapeHtml(project.profile || "")}</td>
-        <td>${escapeHtml(confirmed)}</td>
-        <td>${escapeHtml(project.engineVersion || "")}</td>
-        <td><button type="button" class="open-project-btn" data-project-id="${escapeHtml(project.id)}">Ava eelvaade</button></td>
-      </tr>
-    `;
-  }).join("");
+  const grouped = new Map();
 
-  list.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Projekt</th>
-          <th>Versioon</th>
-          <th>Profiil</th>
-          <th>Kinnitatud</th>
-          <th>Engine</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
+  projects.forEach(project => {
+    if (!grouped.has(project.projectCode)) grouped.set(project.projectCode, []);
+    grouped.get(project.projectCode).push(project);
+  });
+
+  const groups = [...grouped.entries()]
+    .map(([projectCode, versions]) => {
+      const sortedVersions = [...versions].sort((a, b) => b.projectVersion - a.projectVersion);
+      return { projectCode, versions: sortedVersions, latest: sortedVersions[0] };
+    })
+    .sort((a, b) => new Date(b.latest.createdAt || 0) - new Date(a.latest.createdAt || 0));
+
+  list.innerHTML = groups.map(group => {
+    const versionButtons = group.versions.map(version => {
+      return '<button type="button" class="open-project-btn version-btn" data-project-id="' +
+        escapeHtml(version.id) + '">Ava V' + version.projectVersion + '</button>';
+    }).join("");
+
+    return '<div class="project-group">' +
+      '<div class="project-group-main">' +
+        '<div><strong>' + escapeHtml(group.projectCode) + '</strong>' +
+        '<div class="project-order-number"><b>Tellimus:</b> ' +
+          escapeHtml(group.latest.orderNumber || "Määramata") + '</div>' +
+        '<div class="project-group-meta">' +
+          escapeHtml(group.latest.profile || "") +
+          ' • viimane versioon V' + group.latest.projectVersion +
+          ' • ' + escapeHtml(formatDateTime(group.latest.confirmedAt || group.latest.createdAt)) +
+        '</div></div>' +
+      '</div>' +
+      '<div class="project-version-buttons">' + versionButtons + '</div>' +
+    '</div>';
+  }).join("");
 
   list.querySelectorAll(".open-project-btn").forEach(button => {
     button.addEventListener("click", () => openServerProject(button.dataset.projectId));
@@ -220,10 +288,25 @@ async function openServerProject(projectId) {
 
     validateOpenedProject(payload.project);
     renderProjectPreview(payload.project);
+    window.currentServerProject = payload.project;
+
+    const latestVersion =
+      window.latestProjectVersionByCode.get(payload.project.projectCode) ||
+      payload.project.projectVersion;
+    const isLatestVersion = payload.project.projectVersion === latestVersion;
+
+    window.dispatchEvent(new CustomEvent("server-project-opened", {
+      detail: {
+        project: payload.project,
+        latestVersion,
+        isLatestVersion
+      }
+    }));
 
     status.className = "status";
-    status.textContent =
-      `Avatud ainult vaatamiseks • ${payload.project.projectCode} / V${payload.project.projectVersion}`;
+    status.textContent = isLatestVersion
+      ? `Avatud • ${payload.project.projectCode} / V${payload.project.projectVersion} • viimane versioon`
+      : `Avatud ainult vaatamiseks • ${payload.project.projectCode} / V${payload.project.projectVersion} • viimane versioon on V${latestVersion}`;
     document.getElementById("printServerProjectBtn").disabled = false;
   } catch (error) {
     status.className = "error";
@@ -280,6 +363,29 @@ function renderProjectPreview(project) {
   </div>`;
 
   // Kontroll — snapshotis talletatud kinnitatud kontrollitulemus
+  if (snapshot.rekey) {
+    const rekey = snapshot.rekey;
+    const affectedDoorNames = (Array.isArray(rekey.affectedDoorNames) && rekey.affectedDoorNames.length)
+      ? rekey.affectedDoorNames
+      : (Array.isArray(rekey.affectedDoorIds) ? rekey.affectedDoorIds.map(doorId => doorById.get(doorId)?.name || doorId) : []);
+
+    html += `<div class="card change-summary-card">
+      <h2>Muudatuste kokkuvõte</h2>
+      <div class="status">
+        <strong>Muudatuse tüüp:</strong> Rekey – kadunud võti<br>
+        <strong>Eelmine versioon:</strong> V${rekey.sourceProjectVersion}<br>
+        <strong>Muudetud võti:</strong> ${escapeHtml(rekey.keyName || rekey.keyId || "-")}<br>
+        <strong>Vana võtmekood:</strong> <span class="code">${escapeHtml(Array.isArray(rekey.oldCode) ? rekey.oldCode.join("") : "")}</span><br>
+        <strong>Uus võtmekood:</strong> <span class="code">${escapeHtml(Array.isArray(rekey.newCode) ? rekey.newCode.join("") : "")}</span><br>
+        <strong>Muudetud südamikke:</strong> ${Number(rekey.changedCylinderCount || 0)}<br>
+        <strong>Muudetud kambreid:</strong> ${Number(rekey.changedChamberCount || 0)}<br>
+        <strong>Mõjutatud uksed:</strong> ${affectedDoorNames.map(escapeHtml).join(", ") || "-"}<br>
+        <strong>Muudatuse aeg:</strong> ${escapeHtml(formatDateTime(rekey.createdAt))}
+      </div>
+      ${rekey.comment ? `<div class="status"><strong>Kommentaar:</strong> ${escapeHtml(rekey.comment)}</div>` : ""}
+    </div>`;
+  }
+
   html += `<div class="card">
     <h2>Kontroll</h2>`;
 
