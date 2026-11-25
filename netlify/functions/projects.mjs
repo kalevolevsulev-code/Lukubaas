@@ -25,7 +25,22 @@ export default async (request) => {
       return jsonResponse(503, { error: "Serveri seadistus puudulik: SUPABASE_SECRET_KEY puudub Netlify keskkonnast." });
     }
 
-    return jsonResponse(500, { error: "Serveri sisemine viga." });
+    const runtimeMessage = error instanceof Error ? error.message : String(error || "tundmatu viga");
+    const runtimeName = error?.name || "Error";
+    let action = "Kontrolli Netlify Function logi ja serveri seadistust ning proovi uuesti.";
+
+    if (/fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(runtimeMessage)) {
+      action = "Server ei saanud Supabase'iga ühendust. Kontrolli SUPABASE_URL väärtust, Supabase projekti olekut ja Netlify Functioni võrgupääsu.";
+    } else if (/invalid url|failed to parse url/i.test(runtimeMessage)) {
+      action = "SUPABASE_URL kuju on vigane. Kontrolli Netlify keskkonnamuutuja SUPABASE_URL väärtust.";
+    } else if (/headers/i.test(runtimeMessage)) {
+      action = "Serverifunktsioon ei suutnud HTTP päiseid koostada. Kontrolli Netlify Functioni runtime'i ja deploy logi.";
+    }
+
+    return jsonResponse(500, {
+      error: `Serverifunktsiooni runtime viga: ${runtimeName}: ${runtimeMessage}. ${action}`,
+      code: "SERVER_RUNTIME_ERROR"
+    });
   }
 };
 
