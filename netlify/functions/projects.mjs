@@ -27,18 +27,28 @@ export default async (request) => {
 
     const runtimeMessage = error instanceof Error ? error.message : String(error || "tundmatu viga");
     const runtimeName = error?.name || "Error";
+    const cause = error?.cause;
+    const causeCode = cause?.code || cause?.errno || "";
+    const causeMessage = cause?.message || "";
+    const causeHost = cause?.hostname || cause?.host || "";
+    const causeDetails = [
+      causeCode ? "kood " + causeCode : "",
+      causeHost ? "host " + causeHost : "",
+      causeMessage ? causeMessage : ""
+    ].filter(Boolean).join(" • ");
+
     let action = "Kontrolli Netlify Function logi ja serveri seadistust ning proovi uuesti.";
 
-    if (/fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(runtimeMessage)) {
+    if (/fetch failed|network|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(runtimeMessage + " " + causeDetails)) {
       action = "Server ei saanud Supabase'iga ühendust. Kontrolli SUPABASE_URL väärtust, Supabase projekti olekut ja Netlify Functioni võrgupääsu.";
-    } else if (/invalid url|failed to parse url/i.test(runtimeMessage)) {
+    } else if (/invalid url|failed to parse url/i.test(runtimeMessage + " " + causeDetails)) {
       action = "SUPABASE_URL kuju on vigane. Kontrolli Netlify keskkonnamuutuja SUPABASE_URL väärtust.";
-    } else if (/headers/i.test(runtimeMessage)) {
+    } else if (/headers/i.test(runtimeMessage + " " + causeDetails)) {
       action = "Serverifunktsioon ei suutnud HTTP päiseid koostada. Kontrolli Netlify Functioni runtime'i ja deploy logi.";
     }
 
     return jsonResponse(500, {
-      error: `Serverifunktsiooni runtime viga: ${runtimeName}: ${runtimeMessage}. ${action}`,
+      error: `Serverifunktsiooni runtime viga: ${runtimeName}: ${runtimeMessage}${causeDetails ? " (" + causeDetails + ")" : ""}. ${action}`,
       code: "SERVER_RUNTIME_ERROR"
     });
   }
